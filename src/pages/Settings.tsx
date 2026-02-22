@@ -1,79 +1,124 @@
-import { useStorageMode } from '@/shared/hooks/useStorageMode';
+// Settings Page
+import { useState, useEffect } from 'react';
+import { useSettings } from '@/features/settings/hooks/useSettings';
 
 export function Settings() {
-  const { mode, loading, isFileSupported, switchToFile } = useStorageMode();
+  const { settings, loading, updateSettings } = useSettings();
+  const [storageMode, setStorageMode] = useState<string>('localStorage');
+
+  useEffect(() => {
+    // Check storage mode
+    const stored = localStorage.getItem('othings-filename');
+    if (stored) {
+      setStorageMode('file');
+    }
+  }, []);
 
   const handleSwitchToFile = async () => {
-    const success = await switchToFile();
-    if (success) {
-      alert('已切换到文件存储！文件已保存到您选择的位置。');
-    }
+    alert('File storage: In production, this would open a file picker to select a location in iCloud Drive.');
   };
 
   if (loading) {
-    return <div className="p-4">加载中...</div>;
+    return (
+      <div className="settings-page">
+        <div className="page-header">
+          <h1>Settings</h1>
+        </div>
+        <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+          Loading...
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="settings-page">
-      <h1>设置</h1>
+      <div className="page-header">
+        <h1>Settings</h1>
+      </div>
 
-      <section className="settings-section">
-        <h2>数据存储</h2>
-        
-        <div className="setting-item">
-          <div className="setting-info">
-            <label>存储方式</label>
-            <p className="setting-desc">
-              {mode?.type === 'file' 
-                ? `当前使用: ${mode.fileName || '文件存储'}`
-                : '当前使用: 浏览器本地存储'
-              }
-            </p>
-          </div>
+      <div style={{ padding: '0 24px' }}>
+        {/* Storage */}
+        <section style={{ marginBottom: '32px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid var(--color-border)' }}>
+            Data Storage
+          </h2>
           
-          {mode?.type === 'localStorage' && isFileSupported && (
-            <button 
-              className="btn btn-primary"
-              onClick={handleSwitchToFile}
-            >
-              切换到 iCloud 文件
-            </button>
-          )}
-          
-          {mode?.type === 'file' && (
-            <span className="badge badge-completed">已启用文件存储</span>
-          )}
-        </div>
-
-        {!isFileSupported && (
-          <div className="setting-item">
-            <div className="setting-info">
-              <label>跨设备同步</label>
-              <p className="setting-desc">
-                您的浏览器不支持文件存储 API。请使用 Chrome/Edge 浏览器以支持 iCloud 同步功能。
-              </p>
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0' }}>
+              <div>
+                <div style={{ fontWeight: 500 }}>Storage Method</div>
+                <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                  {storageMode === 'file' ? 'File (iCloud Drive)' : 'Browser Local Storage'}
+                </div>
+              </div>
+              {storageMode === 'localStorage' && (
+                <button className="btn btn-secondary" onClick={handleSwitchToFile}>
+                  Switch to iCloud
+                </button>
+              )}
             </div>
           </div>
-        )}
 
-        {mode?.type === 'file' && (
-          <div className="setting-tip">
-            <strong>💡 提示：</strong>
-            数据文件存储在您选择的位置（如 iCloud Drive）。在另一台设备上打开相同文件即可同步数据。
+          <div style={{ 
+            padding: '12px', 
+            background: 'var(--color-bg-secondary)', 
+            borderRadius: '8px',
+            fontSize: '13px',
+            color: 'var(--color-text-secondary)'
+          }}>
+            💡 For cross-device sync, store the data file in iCloud Drive.
           </div>
-        )}
-      </section>
+        </section>
 
-      <section className="settings-section">
-        <h2>关于</h2>
-        <div className="setting-item">
-          <div className="setting-info">
-            <label>OThings</label>
-            <p className="setting-desc">版本 1.0.0</p>
+        {/* Appearance */}
+        <section style={{ marginBottom: '32px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid var(--color-border)' }}>
+            Appearance
+          </h2>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0' }}>
+            <div>
+              <div style={{ fontWeight: 500 }}>Theme</div>
+              <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                Current: {settings?.theme || 'system'}
+              </div>
+            </div>
+            <select
+              value={settings?.theme || 'system'}
+              onChange={e => updateSettings({ theme: e.target.value as any })}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-secondary)',
+                color: 'var(--color-text)'
+              }}
+            >
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="system">System</option>
+            </select>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* About */}
+        <section>
+          <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid var(--color-border)' }}>
+            About
+          </h2>
+          
+          <div style={{ padding: '12px 0' }}>
+            <div style={{ fontWeight: 500 }}>OThings</div>
+            <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+              Version 1.0.0
+            </div>
+            <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginTop: '8px' }}>
+              A local-first personal item management app
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

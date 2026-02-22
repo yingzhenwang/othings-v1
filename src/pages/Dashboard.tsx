@@ -1,158 +1,214 @@
 // Dashboard Page
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Folder, Bell, TrendingUp, AlertCircle, CheckCircle, Clock } from 'lucide-react';
-import { itemRepository } from '../features/items/services/itemRepository';
-import { categoryRepository } from '../features/categories/services/categoryRepository';
-import { reminderRepository } from '../features/reminders/services/reminderRepository';
-import { DashboardStats } from '../shared/types';
-import './Dashboard.css';
+import { itemRepository } from '@/features/items/services/itemRepository';
+import { categoryRepository } from '@/features/categories/services/categoryRepository';
+import { reminderRepository } from '@/features/reminders/services/reminderRepository';
 
 export function Dashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState({
+    totalItems: 0,
+    totalValue: 0,
+    categoryCount: 0,
+    overdueReminders: 0,
+    upcomingReminders: 0
+  });
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     loadStats();
   }, []);
-  
+
   const loadStats = () => {
     try {
-      const totalItems = itemRepository.getTotalQuantity();
-      const totalValue = itemRepository.getTotalValue();
-      const newItemsThisMonth = itemRepository.getCountThisMonth();
-      const categoryCount = categoryRepository.count();
-      const reminderStatuses = reminderRepository.getByStatus();
+      const items = itemRepository.findAll();
+      const categories = categoryRepository.findAll();
+      const reminders = reminderRepository.findAll();
+      
+      const totalValue = items.reduce((sum, item) => {
+        return sum + (item.purchasePrice || 0) * item.quantity;
+      }, 0);
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const overdue = reminders.filter(r => {
+        if (r.completed) return false;
+        const due = new Date(r.dueDate);
+        due.setHours(0, 0, 0, 0);
+        return due < today;
+      }).length;
+      
+      const upcoming = reminders.filter(r => {
+        if (r.completed) return false;
+        const due = new Date(r.dueDate);
+        due.setHours(0, 0, 0, 0);
+        const upcoming = new Date(today);
+        upcoming.setDate(upcoming.getDate() + 7);
+        return due >= today && due <= upcoming;
+      }).length;
       
       setStats({
-        totalItems,
+        totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
         totalValue,
-        newItemsThisMonth,
-        reminders: {
-          overdue: reminderStatuses.overdue.length,
-          upcoming: reminderStatuses.upcoming.length,
-          completed: reminderStatuses.completed.length,
-        }
+        categoryCount: categories.length,
+        overdueReminders: overdue,
+        upcomingReminders: upcoming
       });
-    } catch (error) {
-      console.error('Failed to load stats:', error);
+    } catch (e) {
+      console.error('Failed to load stats:', e);
     } finally {
       setLoading(false);
     }
   };
-  
+
   if (loading) {
     return (
       <div className="dashboard">
         <div className="page-header">
           <h1>Dashboard</h1>
         </div>
-        <div className="loading">Loading...</div>
+        <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+          Loading...
+        </div>
       </div>
     );
   }
-  
+
   return (
     <div className="dashboard">
       <div className="page-header">
-        <h1>Dashboard</h1>
-        <p className="page-subtitle">Overview of your items and reminders</p>
-      </div>
-      
-      <div className="stats-grid">
-        <Link to="/items" className="stat-card">
-          <div className="stat-icon">
-            <Package size={24} />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats?.totalItems ?? 0}</span>
-            <span className="stat-label">Total Items</span>
-          </div>
-        </Link>
-        
-        <div className="stat-card">
-          <div className="stat-icon accent">
-            <TrendingUp size={24} />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">${(stats?.totalValue ?? 0).toLocaleString()}</span>
-            <span className="stat-label">Total Value</span>
-          </div>
+        <div>
+          <h1>Dashboard</h1>
+          <p className="page-subtitle">Overview of your items</p>
         </div>
-        
-        <Link to="/categories" className="stat-card">
-          <div className="stat-icon">
-            <Folder size={24} />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats?.newItemsThisMonth ?? 0}</span>
-            <span className="stat-label">Added This Month</span>
-          </div>
-        </Link>
-        
-        <Link to="/reminders" className="stat-card">
-          <div className="stat-icon warning">
-            <Bell size={24} />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{(stats?.reminders.overdue ?? 0) + (stats?.reminders.upcoming ?? 0)}</span>
-            <span className="stat-label">Active Reminders</span>
-          </div>
-        </Link>
       </div>
-      
-      {/* Reminder Summary */}
-      <div className="reminder-summary">
-        <h2>Reminder Status</h2>
-        <div className="reminder-cards">
-          <div className="reminder-card overdue">
-            <AlertCircle size={20} />
-            <div>
-              <span className="count">{stats?.reminders.overdue ?? 0}</span>
-              <span className="label">Overdue</span>
+
+      <div style={{ padding: '0 24px' }}>
+        {/* Stats Grid */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '16px',
+          marginBottom: '32px'
+        }}>
+          <div className="stat-card">
+            <div className="stat-icon">📦</div>
+            <div className="stat-content">
+              <span className="stat-value">{stats.totalItems}</span>
+              <span className="stat-label">Total Items</span>
             </div>
           </div>
           
-          <div className="reminder-card upcoming">
-            <Clock size={20} />
-            <div>
-              <span className="count">{stats?.reminders.upcoming ?? 0}</span>
-              <span className="label">Upcoming</span>
+          <div className="stat-card">
+            <div className="stat-icon" style={{ background: '#d4edda', color: '#155724' }}>💰</div>
+            <div className="stat-content">
+              <span className="stat-value">${stats.totalValue.toLocaleString()}</span>
+              <span className="stat-label">Total Value</span>
             </div>
           </div>
           
-          <div className="reminder-card completed">
-            <CheckCircle size={20} />
-            <div>
-              <span className="count">{stats?.reminders.completed ?? 0}</span>
-              <span className="label">Completed</span>
+          <div className="stat-card">
+            <div className="stat-icon" style={{ background: '#e2e3f5', color: '#383d41' }}>🏷️</div>
+            <div className="stat-content">
+              <span className="stat-value">{stats.categoryCount}</span>
+              <span className="stat-label">Categories</span>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="stat-icon" style={{ background: '#f8d7da', color: '#721c24' }}>⏰</div>
+            <div className="stat-content">
+              <span className="stat-value">{stats.overdueReminders + stats.upcomingReminders}</span>
+              <span className="stat-label">Active Reminders</span>
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* Quick Actions */}
-      <div className="quick-actions">
-        <h2>Quick Actions</h2>
-        <div className="actions-grid">
-          <Link to="/items?action=new" className="action-card">
-            <Package size={20} />
+
+        {/* Quick Actions */}
+        <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Quick Actions</h2>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: '12px',
+          marginBottom: '32px'
+        }}>
+          <Link to="/items" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '16px',
+            background: 'var(--color-bg-secondary)',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            color: 'var(--color-text)',
+            border: '1px solid var(--color-border)'
+          }}>
+            <span>➕</span>
             <span>Add Item</span>
           </Link>
-          <Link to="/categories?action=new" className="action-card">
-            <Folder size={20} />
-            <span>Add Category</span>
+          
+          <Link to="/categories" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '16px',
+            background: 'var(--color-bg-secondary)',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            color: 'var(--color-text)',
+            border: '1px solid var(--color-border)'
+          }}>
+            <span>🏷️</span>
+            <span>Categories</span>
           </Link>
-          <Link to="/reminders?action=new" className="action-card">
-            <Bell size={20} />
-            <span>Add Reminder</span>
-          </Link>
-          <Link to="/reports" className="action-card">
-            <TrendingUp size={20} />
-            <span>View Reports</span>
+          
+          <Link to="/reminders" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '16px',
+            background: 'var(--color-bg-secondary)',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            color: 'var(--color-text)',
+            border: '1px solid var(--color-border)'
+          }}>
+            <span>⏰</span>
+            <span>Reminders</span>
           </Link>
         </div>
+
+        {/* Reminder Status */}
+        {(stats.overdueReminders > 0 || stats.upcomingReminders > 0) && (
+          <div style={{ marginBottom: '32px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Reminder Status</h2>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              {stats.overdueReminders > 0 && (
+                <div style={{
+                  padding: '12px 16px',
+                  background: '#fff5f5',
+                  border: '1px solid #fed7d7',
+                  borderRadius: '8px',
+                  color: '#c53030'
+                }}>
+                  ⚠️ {stats.overdueReminders} overdue
+                </div>
+              )}
+              {stats.upcomingReminders > 0 && (
+                <div style={{
+                  padding: '12px 16px',
+                  background: '#fffaf0',
+                  border: '1px solid #feebc8',
+                  borderRadius: '8px',
+                  color: '#c05621'
+                }}>
+                  📅 {stats.upcomingReminders} upcoming
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

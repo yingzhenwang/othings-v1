@@ -1,7 +1,7 @@
 // Reminder Repository - Database operations for Reminders
 
-import { getDatabase, generateId, getTimestamp, saveDatabase } from '../../shared/db';
-import { Reminder, CreateReminderInput, ReminderStatus } from '../../shared/types';
+import { getDatabase, generateId, getTimestamp, saveDatabase } from '@/shared/db';
+import { Reminder, CreateReminderInput, ReminderStatus } from '@/shared/types';
 
 export class ReminderRepository {
   findAll(): Reminder[] {

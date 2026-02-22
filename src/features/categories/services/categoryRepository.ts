@@ -1,7 +1,7 @@
 // Category Repository - Database operations for Categories
 
-import { getDatabase, generateId, getTimestamp, saveDatabase } from '../../shared/db';
-import { Category, CreateCategoryInput } from '../../shared/types';
+import { getDatabase, generateId, getTimestamp, saveDatabase } from '@/shared/db';
+import { Category, CreateCategoryInput } from '@/shared/types';
 
 export class CategoryRepository {
   findAll(): Category[] {

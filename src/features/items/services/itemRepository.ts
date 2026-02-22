@@ -1,13 +1,13 @@
 // Item Repository - Database operations for Items
 
-import { getDatabase, generateId, getTimestamp, saveDatabase } from '../db';
+import { getDatabase, generateId, getTimestamp, saveDatabase } from '@/shared/db';
 import { 
   Item, 
   ItemFilters, 
   CreateItemInput, 
   UpdateItemInput,
   ItemStatus 
-} from '../types';
+} from '@/shared/types';
 
 export class ItemRepository {
   findAll(filters?: ItemFilters): Item[] {

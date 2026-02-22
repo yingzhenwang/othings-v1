@@ -1,0 +1,44 @@
+/* Settings Page Styles */
+.settings-page {
+  padding: 20px;
+  max-width: 600px;
+}
+
+.settings-section {
+  margin-bottom: 32px;
+}
+
+.settings-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.setting-info label {
+  font-weight: 500;
+  display: block;
+}
+
+.setting-desc {
+  font-size: 13px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.setting-tip {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 12px;
+}

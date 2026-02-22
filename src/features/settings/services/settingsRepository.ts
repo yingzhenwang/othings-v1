@@ -1,7 +1,7 @@
 // Settings Repository - Database operations for Settings
 
-import { getDatabase, saveDatabase } from '../../shared/db';
-import { Settings, defaultSettings } from '../../shared/types';
+import { getDatabase, saveDatabase } from '@/shared/db';
+import { Settings, defaultSettings } from '@/shared/types';
 
 const SETTINGS_KEY = 'app_settings';
 
