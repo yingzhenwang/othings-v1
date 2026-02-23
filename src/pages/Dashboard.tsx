@@ -1,9 +1,10 @@
 // Dashboard Page
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { itemRepository } from '@/features/items/services/itemRepository';
 import { categoryRepository } from '@/features/categories/services/categoryRepository';
 import { reminderRepository } from '@/features/reminders/services/reminderRepository';
+import type { Item } from '@/shared/types';
 
 export function Dashboard() {
   const [stats, setStats] = useState({
@@ -13,7 +14,9 @@ export function Dashboard() {
     overdueReminders: 0,
     upcomingReminders: 0
   });
+  const [recentItems, setRecentItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<{id: string; name: string; color: string}[]>([]);
 
   useEffect(() => {
     loadStats();
@@ -22,7 +25,7 @@ export function Dashboard() {
   const loadStats = () => {
     try {
       const items = itemRepository.findAll();
-      const categories = categoryRepository.findAll();
+      const categoriesData = categoryRepository.findAll();
       const reminders = reminderRepository.findAll();
       
       const totalValue = items.reduce((sum, item) => {
@@ -48,18 +51,30 @@ export function Dashboard() {
         return due >= today && due <= upcoming;
       }).length;
       
+      // Get recently added items (last 5)
+      const sortedItems = [...items].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ).slice(0, 5);
+      
       setStats({
         totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
         totalValue,
-        categoryCount: categories.length,
+        categoryCount: categoriesData.length,
         overdueReminders: overdue,
         upcomingReminders: upcoming
       });
+      setRecentItems(sortedItems);
+      setCategories(categoriesData);
     } catch (e) {
       console.error('Failed to load stats:', e);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getCategoryName = (id: string | null | undefined) => {
+    if (!id) return null;
+    return categories.find(c => c.id === id);
   };
 
   if (loading) {
@@ -236,6 +251,64 @@ export function Dashboard() {
                   📅 {stats.upcomingReminders} upcoming
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Items */}
+        {recentItems.length > 0 && (
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>
+              <Link to="/items" style={{ color: 'inherit', textDecoration: 'none' }}>
+                Recently Added
+              </Link>
+            </h2>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: '12px'
+            }}>
+              {recentItems.map(item => {
+                const cat = getCategoryName(item.categoryId);
+                return (
+                  <Link 
+                    key={item.id} 
+                    to="/items"
+                    style={{
+                      display: 'block',
+                      padding: '12px 16px',
+                      background: 'var(--color-bg-secondary)',
+                      borderRadius: '8px',
+                      border: '1px solid var(--color-border)',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      transition: 'border-color var(--transition-fast)'
+                    }}
+                  >
+                    <div style={{ fontWeight: 500, marginBottom: '4px' }}>{item.name}</div>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: 'var(--color-text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      {cat && (
+                        <>
+                          <span style={{ 
+                            width: '6px', 
+                            height: '6px', 
+                            borderRadius: '50%', 
+                            background: cat.color 
+                          }}></span>
+                          {cat.name}
+                        </>
+                      )}
+                      {!cat && <span>Uncategorized</span>}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}

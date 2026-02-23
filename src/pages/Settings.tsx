@@ -210,6 +210,25 @@ export function Settings() {
           }}>
             💾 Export your data as JSON for backup. Import from a previous backup to restore data.
           </div>
+
+          {/* Danger Zone */}
+          <div style={{ marginTop: '24px', padding: '16px', border: '1px solid #fca5a5', borderRadius: '8px', background: '#fef2f2' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#dc2626', marginBottom: '12px' }}>⚠️ Danger Zone</h3>
+            <button 
+              className="btn" 
+              onClick={() => {
+                if (confirm('Are you sure you want to delete ALL data? This cannot be undone!')) {
+                  if (confirm('Really? All data will be lost forever!')) {
+                    localStorage.clear();
+                    window.location.reload();
+                  }
+                }
+              }}
+              style={{ background: '#dc2626', color: '#fff', padding: '8px 16px' }}
+            >
+              🗑️ Clear All Data
+            </button>
+          </div>
         </section>
 
         {/* Appearance */}

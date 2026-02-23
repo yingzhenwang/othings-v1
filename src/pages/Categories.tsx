@@ -1,10 +1,12 @@
 // Categories Page
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { categoryRepository } from '@/features/categories/services/categoryRepository';
+import { itemRepository } from '@/features/items/services/itemRepository';
 import type { Category, CreateCategoryInput } from '@/shared/types';
 
 export function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [items, setItems] = useState<{id: string; categoryId: string | null}[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -21,13 +23,26 @@ export function Categories() {
   const loadCategories = () => {
     try {
       const data = categoryRepository.findAll();
+      const itemsData = itemRepository.findAll().map(i => ({ id: i.id, categoryId: i.categoryId }));
       setCategories(data);
+      setItems(itemsData);
     } catch (e) {
       console.error('Failed to load categories:', e);
     } finally {
       setLoading(false);
     }
   };
+
+  // Compute item counts per category
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    items.forEach(item => {
+      if (item.categoryId) {
+        counts[item.categoryId] = (counts[item.categoryId] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [items]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,6 +205,9 @@ export function Categories() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 500 }}>{category.name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                    {categoryCounts[category.id] || 0} items
+                  </div>
                 </div>
                 <button className="icon-btn" onClick={() => handleEdit(category)}>✏️</button>
                 <button className="icon-btn danger" onClick={() => handleDelete(category.id)}>🗑️</button>

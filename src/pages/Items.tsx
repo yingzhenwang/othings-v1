@@ -1,10 +1,13 @@
 // Items Page
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { itemRepository } from '@/features/items/services/itemRepository';
 import { categoryRepository } from '@/features/categories/services/categoryRepository';
 import type { Item, Category, CreateItemInput } from '@/shared/types';
 
 const ITEMS_PER_PAGE = 20;
+
+type SortOption = 'name' | 'createdAt' | 'updatedAt' | 'purchasePrice' | 'quantity';
+type SortDir = 'asc' | 'desc';
 
 export function Items() {
   const [items, setItems] = useState<Item[]>([]);
@@ -14,7 +17,10 @@ export function Items() {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<SortOption>('updatedAt');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [formData, setFormData] = useState<CreateItemInput>({
     name: '',
     categoryId: undefined,
@@ -44,22 +50,53 @@ export function Items() {
     }
   };
 
-  const filteredItems = items.filter(item => {
-    // Search filter
-    if (search) {
-      const s = search.toLowerCase();
-      if (!item.name.toLowerCase().includes(s) && 
-          !item.description?.toLowerCase().includes(s) && 
-          !item.location?.toLowerCase().includes(s)) {
+  const filteredItems = useMemo(() => {
+    let result = items.filter(item => {
+      // Search filter
+      if (search) {
+        const s = search.toLowerCase();
+        if (!item.name.toLowerCase().includes(s) && 
+            !item.description?.toLowerCase().includes(s) && 
+            !item.location?.toLowerCase().includes(s)) {
+          return false;
+        }
+      }
+      // Status filter
+      if (statusFilter && item.status !== statusFilter) {
         return false;
       }
-    }
-    // Status filter
-    if (statusFilter && item.status !== statusFilter) {
-      return false;
-    }
-    return true;
-  });
+      // Category filter
+      if (categoryFilter && item.categoryId !== categoryFilter) {
+        return false;
+      }
+      return true;
+    });
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      let cmp = 0;
+      switch (sortBy) {
+        case 'name':
+          cmp = a.name.localeCompare(b.name);
+          break;
+        case 'createdAt':
+          cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+        case 'updatedAt':
+          cmp = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+          break;
+        case 'purchasePrice':
+          cmp = (a.purchasePrice || 0) - (b.purchasePrice || 0);
+          break;
+        case 'quantity':
+          cmp = a.quantity - b.quantity;
+          break;
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+
+    return result;
+  }, [items, search, statusFilter, categoryFilter, sortBy, sortDir]);
 
   // Pagination
   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
@@ -138,10 +175,19 @@ export function Items() {
     });
   };
 
+  const getCategory = (id: string | null | undefined) => {
+    if (!id) return null;
+    return categories.find(c => c.id === id);
+  };
+
   const getCategoryName = (id: string | null | undefined) => {
-    if (!id) return '-';
-    const cat = categories.find(c => c.id === id);
+    const cat = getCategory(id);
     return cat ? cat.name : '-';
+  };
+
+  const getCategoryColor = (id: string | null | undefined) => {
+    const cat = getCategory(id);
+    return cat ? cat.color : '#5c5f66';
   };
 
   if (loading) {
@@ -169,44 +215,103 @@ export function Items() {
         </button>
       </div>
 
-      {/* Search */}
+      {/* Search & Filters */}
       <div style={{ padding: '0 24px', marginBottom: '16px' }}>
-        <input
-          type="text"
-          placeholder="Search items..."
-          value={search}
-          onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            fontSize: '14px',
-            border: '1px solid var(--color-border)',
-            borderRadius: '8px',
-            background: 'var(--color-bg-secondary)',
-            color: 'var(--color-text)'
-          }}
-        />
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            placeholder="Search items..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+            style={{
+              flex: '1',
+              minWidth: '200px',
+              padding: '12px 16px',
+              fontSize: '14px',
+              border: '1px solid var(--color-border)',
+              borderRadius: '8px',
+              background: 'var(--color-bg-secondary)',
+              color: 'var(--color-text)'
+            }}
+          />
+          
+          {/* Category Filter */}
+          <select
+            value={categoryFilter}
+            onChange={e => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
+            style={{
+              padding: '12px 16px',
+              fontSize: '14px',
+              border: '1px solid var(--color-border)',
+              borderRadius: '8px',
+              background: 'var(--color-bg-secondary)',
+              color: 'var(--color-text)',
+              minWidth: '140px'
+            }}
+          >
+            <option value="">All Categories</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
         
-        {/* Status Filter */}
-        <select
-          value={statusFilter}
-          onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-          style={{
-            padding: '12px 16px',
-            fontSize: '14px',
-            border: '1px solid var(--color-border)',
-            borderRadius: '8px',
-            background: 'var(--color-bg-secondary)',
-            color: 'var(--color-text)',
-            marginLeft: '8px',
-            minWidth: '140px'
-          }}
-        >
-          <option value="">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-          <option value="discarded">Discarded</option>
-        </select>
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+            style={{
+              padding: '12px 16px',
+              fontSize: '14px',
+              border: '1px solid var(--color-border)',
+              borderRadius: '8px',
+              background: 'var(--color-bg-secondary)',
+              color: 'var(--color-text)',
+              minWidth: '120px'
+            }}
+          >
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="discarded">Discarded</option>
+          </select>
+        </div>
+        
+        {/* Sort Options */}
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center' }}>
+          <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>Sort:</span>
+          <select
+            value={sortBy}
+            onChange={e => { setSortBy(e.target.value as SortOption); setCurrentPage(1); }}
+            style={{
+              padding: '8px 12px',
+              fontSize: '13px',
+              border: '1px solid var(--color-border)',
+              borderRadius: '6px',
+              background: 'var(--color-bg-secondary)',
+              color: 'var(--color-text)'
+            }}
+          >
+            <option value="updatedAt">Last Updated</option>
+            <option value="createdAt">Created Date</option>
+            <option value="name">Name</option>
+            <option value="purchasePrice">Price</option>
+            <option value="quantity">Quantity</option>
+          </select>
+          <button
+            onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+            style={{
+              padding: '8px 12px',
+              fontSize: '13px',
+              border: '1px solid var(--color-border)',
+              borderRadius: '6px',
+              background: 'var(--color-bg-secondary)',
+              color: 'var(--color-text)'
+            }}
+            title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+          >
+            {sortDir === 'asc' ? '↑' : '↓'}
+          </button>
+        </div>
       </div>
 
       {/* Form Modal */}
@@ -355,9 +460,24 @@ export function Items() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                   <div>
                     <div style={{ fontWeight: 600, fontSize: '16px' }}>{item.name}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-                      {getCategoryName(item.categoryId)}
-                    </div>
+                    {item.categoryId && (
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: getCategoryColor(item.categoryId),
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        marginTop: '2px'
+                      }}>
+                        <span style={{ 
+                          width: '8px', 
+                          height: '8px', 
+                          borderRadius: '50%', 
+                          background: getCategoryColor(item.categoryId) 
+                        }}></span>
+                        {getCategoryName(item.categoryId)}
+                      </div>
+                    )}
                   </div>
                   <span style={{
                     padding: '2px 8px',
