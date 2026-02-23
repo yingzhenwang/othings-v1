@@ -4,6 +4,8 @@ import { itemRepository } from '@/features/items/services/itemRepository';
 import { categoryRepository } from '@/features/categories/services/categoryRepository';
 import type { Item, Category, CreateItemInput } from '@/shared/types';
 
+const ITEMS_PER_PAGE = 20;
+
 export function Items() {
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -11,6 +13,7 @@ export function Items() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState<CreateItemInput>({
     name: '',
     categoryId: undefined,
@@ -49,6 +52,17 @@ export function Items() {
       item.location?.toLowerCase().includes(s)
     );
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,7 +167,7 @@ export function Items() {
           type="text"
           placeholder="Search items..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
           style={{
             width: '100%',
             padding: '12px 16px',
@@ -302,7 +316,7 @@ export function Items() {
             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
             gap: '16px'
           }}>
-            {filteredItems.map(item => (
+            {paginatedItems.map(item => (
               <div key={item.id} style={{
                 background: 'var(--color-bg-secondary)',
                 border: '1px solid var(--color-border)',
@@ -346,6 +360,36 @@ export function Items() {
               </div>
             ))}
           </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              gap: '8px',
+              padding: '16px',
+              marginTop: '16px'
+            }}>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                ← Prev
+              </button>
+              <span style={{ padding: '0 12px', fontSize: '14px' }}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
