@@ -1,10 +1,20 @@
 // Items Page
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { itemRepository } from '@/features/items/services/itemRepository';
 import { categoryRepository } from '@/features/categories/services/categoryRepository';
 import type { Item, Category, CreateItemInput } from '@/shared/types';
 
 const ITEMS_PER_PAGE = 20;
+
+// Debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 type SortOption = 'name' | 'createdAt' | 'updatedAt' | 'purchasePrice' | 'quantity';
 type SortDir = 'asc' | 'desc';
@@ -16,6 +26,7 @@ export function Items() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [locationFilter, setLocationFilter] = useState<string>('');
@@ -53,9 +64,9 @@ export function Items() {
 
   const filteredItems = useMemo(() => {
     let result = items.filter(item => {
-      // Search filter
-      if (search) {
-        const s = search.toLowerCase();
+      // Search filter (debounced)
+      if (debouncedSearch) {
+        const s = debouncedSearch.toLowerCase();
         if (!item.name.toLowerCase().includes(s) && 
             !item.description?.toLowerCase().includes(s) && 
             !item.location?.toLowerCase().includes(s)) {
@@ -101,7 +112,7 @@ export function Items() {
     });
 
     return result;
-  }, [items, search, statusFilter, categoryFilter, locationFilter, sortBy, sortDir]);
+  }, [items, debouncedSearch, statusFilter, categoryFilter, locationFilter, sortBy, sortDir]);
 
   // Get unique locations for filter
   const uniqueLocations = useMemo(() => {
