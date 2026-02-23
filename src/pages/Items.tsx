@@ -52,6 +52,13 @@ export function Items() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    if (!formData.name || formData.name.trim() === '') {
+      alert('Please enter a name for the item');
+      return;
+    }
+    
     try {
       if (editingItem) {
         itemRepository.update({ id: editingItem.id, ...formData });
@@ -62,6 +69,7 @@ export function Items() {
       resetForm();
     } catch (e) {
       console.error('Failed to save item:', e);
+      alert('Failed to save item: ' + String(e));
     }
   };
 
