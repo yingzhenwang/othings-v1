@@ -36,6 +36,8 @@ export function Items() {
   
   const hasFilters = search || statusFilter || categoryFilter || locationFilter;
   
+  const activeFilterCount = [statusFilter, categoryFilter, locationFilter].filter(Boolean).length + (search ? 1 : 0);
+  
   const clearFilters = () => {
     setSearch('');
     setStatusFilter('');
@@ -274,6 +276,18 @@ export function Items() {
           <h1>Items</h1>
           <p className="page-subtitle">
             {filteredItems.length} items 
+            {hasFilters && (
+              <span style={{ 
+                marginLeft: '8px', 
+                padding: '2px 8px', 
+                background: 'var(--color-accent)', 
+                color: '#fff', 
+                borderRadius: '10px',
+                fontSize: '12px'
+              }}>
+                {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+              </span>
+            )}
             {stats.totalQty !== filteredItems.length && ` (${stats.totalQty} total)`}
             {stats.totalValue > 0 && ` • $${stats.totalValue.toLocaleString()}`}
           </p>
