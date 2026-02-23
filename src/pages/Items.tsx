@@ -13,6 +13,7 @@ export function Items() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState<CreateItemInput>({
     name: '',
@@ -44,13 +45,20 @@ export function Items() {
   };
 
   const filteredItems = items.filter(item => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    return (
-      item.name.toLowerCase().includes(s) ||
-      item.description?.toLowerCase().includes(s) ||
-      item.location?.toLowerCase().includes(s)
-    );
+    // Search filter
+    if (search) {
+      const s = search.toLowerCase();
+      if (!item.name.toLowerCase().includes(s) && 
+          !item.description?.toLowerCase().includes(s) && 
+          !item.location?.toLowerCase().includes(s)) {
+        return false;
+      }
+    }
+    // Status filter
+    if (statusFilter && item.status !== statusFilter) {
+      return false;
+    }
+    return true;
   });
 
   // Pagination
@@ -178,6 +186,27 @@ export function Items() {
             color: 'var(--color-text)'
           }}
         />
+        
+        {/* Status Filter */}
+        <select
+          value={statusFilter}
+          onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+          style={{
+            padding: '12px 16px',
+            fontSize: '14px',
+            border: '1px solid var(--color-border)',
+            borderRadius: '8px',
+            background: 'var(--color-bg-secondary)',
+            color: 'var(--color-text)',
+            marginLeft: '8px',
+            minWidth: '140px'
+          }}
+        >
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="discarded">Discarded</option>
+        </select>
       </div>
 
       {/* Form Modal */}
