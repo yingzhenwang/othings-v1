@@ -235,6 +235,25 @@ export function Items() {
     return cat ? cat.color : '#5c5f66';
   };
 
+  // Format date for display
+  const formatDate = (dateStr: string | undefined) => {
+    if (!dateStr) return '';
+    try {
+      return new Date(dateStr).toLocaleDateString();
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Check if warranty expiring soon (within 30 days)
+  const isWarrantyExpiringSoon = (dateStr: string | undefined) => {
+    if (!dateStr) return false;
+    const expiry = new Date(dateStr);
+    const now = new Date();
+    const daysLeft = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return daysLeft > 0 && daysLeft <= 30;
+  };
+
   if (loading) {
     return (
       <div className="items-page">
@@ -579,6 +598,18 @@ export function Items() {
                 {item.description && (
                   <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
                     {item.description}
+                  </div>
+                )}
+                
+                {/* Warranty badge */}
+                {item.warrantyExpiry && (
+                  <div style={{ 
+                    fontSize: '12px', 
+                    marginBottom: '8px',
+                    color: isWarrantyExpiringSoon(item.warrantyExpiry) ? '#c05621' : 'var(--color-text-secondary)'
+                  }}>
+                    {isWarrantyExpiringSoon(item.warrantyExpiry) && '⚠️ '}
+                    Warranty: {formatDate(item.warrantyExpiry)}
                   </div>
                 )}
                 
