@@ -15,6 +15,7 @@ export function Dashboard() {
     upcomingReminders: 0
   });
   const [recentItems, setRecentItems] = useState<Item[]>([]);
+  const [warrantyExpiring, setWarrantyExpiring] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<{id: string; name: string; color: string}[]>([]);
   const [categoryItemCounts, setCategoryItemCounts] = useState<Record<string, number>>({});
@@ -52,6 +53,15 @@ export function Dashboard() {
         return due >= today && due <= upcoming;
       }).length;
       
+      // Get items with warranty expiring in 30 days
+      const warrantyExpiring = items.filter(item => {
+        if (!item.warrantyExpiry || item.status !== 'active') return false;
+        const expiry = new Date(item.warrantyExpiry);
+        expiry.setHours(0, 0, 0, 0);
+        const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return daysLeft > 0 && daysLeft <= 30;
+      });
+      
       // Get recently added items (last 5)
       const sortedItems = [...items].sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -75,6 +85,7 @@ export function Dashboard() {
       setRecentItems(sortedItems);
       setCategories(categoriesData);
       setCategoryItemCounts(catCounts);
+      setWarrantyExpiring(warrantyExpiring);
     } catch (e) {
       console.error('Failed to load stats:', e);
     } finally {
@@ -238,7 +249,7 @@ export function Dashboard() {
         {(stats.overdueReminders > 0 || stats.upcomingReminders > 0) && (
           <div style={{ marginBottom: '32px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Reminder Status</h2>
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               {stats.overdueReminders > 0 && (
                 <div style={{
                   padding: '12px 16px',
@@ -261,6 +272,40 @@ export function Dashboard() {
                   📅 {stats.upcomingReminders} upcoming
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Warranty Expiring */}
+        {warrantyExpiring.length > 0 && (
+          <div style={{ marginBottom: '32px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>
+              ⚠️ Warranty Expiring Soon
+            </h2>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              {warrantyExpiring.map(item => {
+                const daysLeft = Math.ceil((new Date(item.warrantyExpiry!).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                return (
+                  <Link
+                    key={item.id}
+                    to="/items"
+                    style={{
+                      padding: '12px 16px',
+                      background: '#fff5f5',
+                      border: '1px solid #fed7d7',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      color: '#c53030',
+                      minWidth: '180px'
+                    }}
+                  >
+                    <div style={{ fontWeight: 500 }}>{item.name}</div>
+                    <div style={{ fontSize: '12px', opacity: 0.8 }}>
+                      {daysLeft} day{daysLeft > 1 ? 's' : ''} left
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
