@@ -9,6 +9,7 @@ export function Reminders() {
   const [items, setItems] = useState<{id: string; name: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [formData, setFormData] = useState<CreateReminderInput>({
     itemId: '',
     title: '',
@@ -42,13 +43,33 @@ export function Reminders() {
     }
     
     try {
-      reminderRepository.create(formData);
+      if (editingReminder) {
+        reminderRepository.update(editingReminder.id, {
+          itemId: formData.itemId,
+          title: formData.title,
+          dueDate: formData.dueDate,
+          notifyBefore: formData.notifyBefore
+        });
+      } else {
+        reminderRepository.create(formData);
+      }
       loadData();
       resetForm();
     } catch (e) {
-      console.error('Failed to create reminder:', e);
-      alert('Failed to create reminder: ' + String(e));
+      console.error('Failed to save reminder:', e);
+      alert('Failed to save reminder: ' + String(e));
     }
+  };
+
+  const handleEdit = (reminder: Reminder) => {
+    setEditingReminder(reminder);
+    setFormData({
+      itemId: reminder.itemId,
+      title: reminder.title,
+      dueDate: reminder.dueDate,
+      notifyBefore: reminder.notifyBefore
+    });
+    setShowForm(true);
   };
 
   const handleToggle = (id: string, completed: boolean) => {
@@ -77,6 +98,7 @@ export function Reminders() {
 
   const resetForm = () => {
     setShowForm(false);
+    setEditingReminder(null);
     setFormData({ itemId: '', title: '', dueDate: '', notifyBefore: 7 });
   };
 
@@ -132,7 +154,7 @@ export function Reminders() {
         <div className="modal-overlay" onClick={resetForm}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Add Reminder</h2>
+              <h2>{editingReminder ? 'Edit' : 'Add'} Reminder</h2>
               <button className="icon-btn" onClick={resetForm}>✕</button>
             </div>
             <form onSubmit={handleSubmit} className="modal-body">
@@ -180,7 +202,9 @@ export function Reminders() {
                 <button type="button" className="btn btn-secondary" onClick={resetForm}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">Add</button>
+                <button type="submit" className="btn btn-primary">
+                  {editingReminder ? 'Save' : 'Add'}
+                </button>
               </div>
             </form>
           </div>
@@ -221,6 +245,7 @@ export function Reminders() {
                       {getItemName(r.itemId)} • {r.dueDate}
                     </div>
                   </div>
+                  <button className="icon-btn" onClick={() => handleEdit(r)}>✏️</button>
                   <button className="icon-btn danger" onClick={() => handleDelete(r.id)}>🗑️</button>
                 </div>
               ))}
@@ -252,6 +277,7 @@ export function Reminders() {
                       {getItemName(r.itemId)} • {r.dueDate}
                     </div>
                   </div>
+                  <button className="icon-btn" onClick={() => handleEdit(r)}>✏️</button>
                   <button className="icon-btn danger" onClick={() => handleDelete(r.id)}>🗑️</button>
                 </div>
               ))}
@@ -284,6 +310,7 @@ export function Reminders() {
                       {getItemName(r.itemId)}
                     </div>
                   </div>
+                  <button className="icon-btn" onClick={() => handleEdit(r)}>✏️</button>
                   <button className="icon-btn danger" onClick={() => handleDelete(r.id)}>🗑️</button>
                 </div>
               ))}
