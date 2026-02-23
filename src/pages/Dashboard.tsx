@@ -125,6 +125,36 @@ export function Dashboard() {
           </div>
         </div>
 
+        {/* Empty State - Show when no items */}
+        {stats.totalItems === 0 && (
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            background: 'var(--color-bg-secondary)',
+            borderRadius: '12px',
+            marginBottom: '32px'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📦</div>
+            <h2 style={{ fontSize: '20px', marginBottom: '8px' }}>Welcome to OThings!</h2>
+            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
+              Start by adding your first item
+            </p>
+            <Link to="/items" style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 24px',
+              background: 'var(--color-accent)',
+              color: '#fff',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontWeight: 500
+            }}>
+              <span>➕</span> Add First Item
+            </Link>
+          </div>
+        )}
+
         {/* Quick Actions */}
         <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Quick Actions</h2>
         <div style={{ 
