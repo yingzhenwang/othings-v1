@@ -67,7 +67,12 @@ export function Categories() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Delete this category?')) {
+    const itemCount = categoryCounts[id] || 0;
+    let confirmMsg = 'Delete this category?';
+    if (itemCount > 0) {
+      confirmMsg = `This category has ${itemCount} item(s). Deleting will remove the category from those items. Continue?`;
+    }
+    if (confirm(confirmMsg)) {
       try {
         categoryRepository.delete(id);
         loadCategories();

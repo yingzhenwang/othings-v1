@@ -17,6 +17,7 @@ export function Dashboard() {
   const [recentItems, setRecentItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<{id: string; name: string; color: string}[]>([]);
+  const [categoryItemCounts, setCategoryItemCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     loadStats();
@@ -56,6 +57,14 @@ export function Dashboard() {
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ).slice(0, 5);
       
+      // Get category item counts
+      const catCounts: Record<string, number> = {};
+      items.forEach(item => {
+        if (item.categoryId) {
+          catCounts[item.categoryId] = (catCounts[item.categoryId] || 0) + item.quantity;
+        }
+      });
+      
       setStats({
         totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
         totalValue,
@@ -65,6 +74,7 @@ export function Dashboard() {
       });
       setRecentItems(sortedItems);
       setCategories(categoriesData);
+      setCategoryItemCounts(catCounts);
     } catch (e) {
       console.error('Failed to load stats:', e);
     } finally {
@@ -251,6 +261,57 @@ export function Dashboard() {
                   📅 {stats.upcomingReminders} upcoming
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Categories with items */}
+        {categories.length > 0 && Object.keys(categoryItemCounts).length > 0 && (
+          <div style={{ marginBottom: '32px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>
+              <Link to="/categories" style={{ color: 'inherit', textDecoration: 'none' }}>
+                By Category
+              </Link>
+            </h2>
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              {categories.filter(c => categoryItemCounts[c.id]).map(cat => (
+                <Link 
+                  key={cat.id}
+                  to="/categories"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    background: cat.color + '15',
+                    borderRadius: '20px',
+                    textDecoration: 'none',
+                    color: 'var(--color-text-primary)',
+                    border: `1px solid ${cat.color}30`
+                  }}
+                >
+                  <span style={{ 
+                    width: '10px', 
+                    height: '10px', 
+                    borderRadius: '50%', 
+                    background: cat.color 
+                  }}></span>
+                  <span style={{ fontWeight: 500 }}>{cat.name}</span>
+                  <span style={{ 
+                    fontSize: '12px', 
+                    color: 'var(--color-text-secondary)',
+                    background: 'var(--color-bg-primary)',
+                    padding: '2px 8px',
+                    borderRadius: '10px'
+                  }}>
+                    {categoryItemCounts[cat.id]}
+                  </span>
+                </Link>
+              ))}
             </div>
           </div>
         )}
