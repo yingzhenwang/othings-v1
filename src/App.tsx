@@ -8,6 +8,7 @@ import { Categories } from '@/pages/Categories';
 import { Reminders } from '@/pages/Reminders';
 import { Settings } from '@/pages/Settings';
 import { initDatabase } from '@/shared/db';
+import { useKeyboardShortcuts, ShortcutsModal } from '@/shared/hooks/useKeyboardShortcuts';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +40,7 @@ function LoadingScreen() {
 function App() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { shortcuts, showHelp, setShowHelp } = useKeyboardShortcuts();
 
   useEffect(() => {
     console.log('[App] Initializing...');
@@ -73,6 +75,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      {showHelp && <ShortcutsModal shortcuts={shortcuts} onClose={() => setShowHelp(false)} />}
     </QueryClientProvider>
   );
 }

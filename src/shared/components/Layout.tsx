@@ -82,6 +82,24 @@ export function Layout() {
 
         <div className="sidebar-footer">
           <span className="version">v1.0.0</span>
+          <button 
+            onClick={() => {
+              // Dispatch a custom event or use state to show shortcuts
+              const e = new KeyboardEvent('keydown', { key: '?' });
+              window.dispatchEvent(e);
+            }}
+            style={{
+              fontSize: '11px',
+              color: 'var(--color-text-tertiary)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              marginLeft: '8px'
+            }}
+            title="Keyboard shortcuts"
+          >
+            ⌨️
+          </button>
         </div>
       </aside>
 
