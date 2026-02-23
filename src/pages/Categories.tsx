@@ -31,6 +31,12 @@ export function Categories() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.name || formData.name.trim() === '') {
+      alert('Please enter a category name');
+      return;
+    }
+    
     try {
       if (editingCategory) {
         categoryRepository.update(editingCategory.id, formData);
@@ -41,6 +47,7 @@ export function Categories() {
       resetForm();
     } catch (e) {
       console.error('Failed to save category:', e);
+      alert('Failed to save category: ' + String(e));
     }
   };
 

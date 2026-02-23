@@ -35,12 +35,19 @@ export function Reminders() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.itemId || !formData.title || !formData.dueDate) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
     try {
       reminderRepository.create(formData);
       loadData();
       resetForm();
     } catch (e) {
       console.error('Failed to create reminder:', e);
+      alert('Failed to create reminder: ' + String(e));
     }
   };
 
