@@ -186,7 +186,10 @@ function saveToLocalStorage(): void {
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 export function scheduleSave(): void {
   if (saveTimeout) clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(() => { saveDatabase(); saveTimeout = null; }, 1000);
+  saveTimeout = setTimeout(() => { 
+    saveDatabase(); 
+    saveTimeout = null; 
+  }, 1000);
 }
 
 export function getDatabase(): Database {

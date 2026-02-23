@@ -18,6 +18,7 @@ export function Items() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [locationFilter, setLocationFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<SortOption>('updatedAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -69,6 +70,10 @@ export function Items() {
       if (categoryFilter && item.categoryId !== categoryFilter) {
         return false;
       }
+      // Location filter
+      if (locationFilter && item.location !== locationFilter) {
+        return false;
+      }
       return true;
     });
 
@@ -96,7 +101,25 @@ export function Items() {
     });
 
     return result;
-  }, [items, search, statusFilter, categoryFilter, sortBy, sortDir]);
+  }, [items, search, statusFilter, categoryFilter, locationFilter, sortBy, sortDir]);
+
+  // Get unique locations for filter
+  const uniqueLocations = useMemo(() => {
+    const locs = new Set<string>();
+    items.forEach(item => {
+      if (item.location) locs.add(item.location);
+    });
+    return Array.from(locs).sort();
+  }, [items]);
+
+  // Stats
+  const stats = useMemo(() => {
+    const totalValue = filteredItems.reduce((sum, item) => {
+      return sum + (item.purchasePrice || 0) * item.quantity;
+    }, 0);
+    const totalQty = filteredItems.reduce((sum, item) => sum + item.quantity, 0);
+    return { totalValue, totalQty };
+  }, [filteredItems]);
 
   // Pagination
   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
@@ -208,7 +231,11 @@ export function Items() {
       <div className="page-header">
         <div>
           <h1>Items</h1>
-          <p className="page-subtitle">{filteredItems.length} items</p>
+          <p className="page-subtitle">
+            {filteredItems.length} items 
+            {stats.totalQty !== filteredItems.length && ` (${stats.totalQty} total)`}
+            {stats.totalValue > 0 && ` • $${stats.totalValue.toLocaleString()}`}
+          </p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowForm(true)}>
           + Add Item
@@ -252,6 +279,26 @@ export function Items() {
             <option value="">All Categories</option>
             {categories.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+
+          {/* Location Filter */}
+          <select
+            value={locationFilter}
+            onChange={e => { setLocationFilter(e.target.value); setCurrentPage(1); }}
+            style={{
+              padding: '12px 16px',
+              fontSize: '14px',
+              border: '1px solid var(--color-border)',
+              borderRadius: '8px',
+              background: 'var(--color-bg-secondary)',
+              color: 'var(--color-text)',
+              minWidth: '140px'
+            }}
+          >
+            <option value="">All Locations</option>
+            {uniqueLocations.map(loc => (
+              <option key={loc} value={loc}>{loc}</option>
             ))}
           </select>
         
