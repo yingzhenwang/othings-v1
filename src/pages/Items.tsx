@@ -33,6 +33,17 @@ export function Items() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<SortOption>('updatedAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  
+  const hasFilters = search || statusFilter || categoryFilter || locationFilter;
+  
+  const clearFilters = () => {
+    setSearch('');
+    setStatusFilter('');
+    setCategoryFilter('');
+    setLocationFilter('');
+    setCurrentPage(1);
+  };
+  
   const [formData, setFormData] = useState<CreateItemInput>({
     name: '',
     categoryId: undefined,
@@ -335,7 +346,7 @@ export function Items() {
         </div>
         
         {/* Sort Options */}
-        <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>Sort:</span>
           <select
             value={sortBy}
@@ -369,6 +380,23 @@ export function Items() {
           >
             {sortDir === 'asc' ? '↑' : '↓'}
           </button>
+          
+          {hasFilters && (
+            <button
+              onClick={clearFilters}
+              style={{
+                padding: '8px 12px',
+                fontSize: '13px',
+                border: '1px solid var(--color-danger)',
+                borderRadius: '6px',
+                background: 'transparent',
+                color: 'var(--color-danger)',
+                marginLeft: 'auto'
+              }}
+            >
+              ✕ Clear filters
+            </button>
+          )}
         </div>
       </div>
 
